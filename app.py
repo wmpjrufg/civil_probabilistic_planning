@@ -3,14 +3,22 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 
+
+try:
+    from networkx.drawing.nx_pydot import graphviz_layout
+except ImportError:
+    st.error("O módulo graphviz não está instalado. Instale com: pip install pygraphviz ou pydot.")
+
 # Carregar os dados
-df = pd.read_excel("exemplo_aldo_dorea_pag170livro.xlsx")
+# df = pd.read_excel("exemplo_aldo_dorea_pag170livro.xlsx")
+df = pd.read_excel("exemplo2.xlsx")
 
 # Título da aplicação
 st.title("Visualização de Grafos direcionados")
 
 # Criar o grafo direcionado
 G = nx.DiGraph()
+G.graph['graph'] = {'rankdir': 'LR'}
 
 # Adicionar nós e arestas no grafo
 for _, row in df.iterrows():
@@ -24,7 +32,12 @@ for _, row in df.iterrows():
             G.add_edge(pred, row['Código'])
 
 # Definir o layout para o grafo
-pos = nx.spring_layout(G, seed=3, k=0.15)
+# pos = nx.spring_layout(G, seed=3, k=0.15)
+try:
+    pos = graphviz_layout(G, prog="dot")
+except:
+    st.error("Erro ao aplicar layout do Graphviz. Verifique se o Graphviz está instalado corretamente.")
+    st.stop()
 
 # Desenhar o grafo usando matplotlib
 fig, ax = plt.subplots(figsize=(12, 10))  
