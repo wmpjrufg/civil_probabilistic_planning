@@ -14,6 +14,12 @@ Para ccriar o seu virtual env. não se esqueça de colocar o terminal na pasta d
 
 `source <meu_ambiente_virtual>/bin/activate`
 
+# Instalar Graphviz
+
+É necessário ter instalado na máquina o Graphviz para o funcionamento da aplicação
+
+https://graphviz.org/download/
+
 # Instalando os requirements
 
 Após a acriação da venv você pode instalar os requirements com o seguinte comando:  
