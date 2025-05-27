@@ -38,14 +38,18 @@ def generate_graph(G, critical_path=None):
 
     # Cores das arestas (vermelho para caminho crítico)
     edge_colors = []
+    edge_widths = []
     for u, v in G.edges():
         if critical_path and u in critical_path and v in critical_path:
             if critical_path.index(v) - critical_path.index(u) == 1:
                 edge_colors.append(cor_critical)
+                edge_widths.append(2.5)
             else:
                 edge_colors.append("black")
+                edge_widths.append(1.0)
         else:
             edge_colors.append("black")
+            edge_widths.append(1.0)
 
     # Desenhar os nós
     nx.draw_networkx(
@@ -57,6 +61,7 @@ def generate_graph(G, critical_path=None):
         node_color=node_colors,
         node_size=2000,
         edge_color=edge_colors,
+        width=edge_widths,
         font_weight='bold',
         font_color='black',
         labels={node: f"{G.nodes[node]['label']}\n({G.nodes[node]['duration']})" for node in G.nodes},
