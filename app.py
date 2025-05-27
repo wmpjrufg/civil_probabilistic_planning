@@ -10,9 +10,26 @@ try:
 except ImportError:
     st.error("O módulo graphviz não está instalado. Instale com: pip install pygraphviz ou pydot.")
 
-# Carregar os dados
-df = pd.read_excel("exemplo_aldo_dorea_pag170livro.xlsx")
-# df = pd.read_excel("exemplo2.xlsx")
+st.title("Visualização de Grafos direcionados")
+# # Carregar os dados
+# df = pd.read_excel("exemplo_aldo_dorea_pag170livro.xlsx")
+# # df = pd.read_excel("exemplo2.xlsx")
+uploaded_file = st.file_uploader("Faça o upload do arquivo Excel para exibir o grafo", type=["xlsx"])
+
+if uploaded_file is not None:
+    # Carrega todas as planilhas disponíveis
+    xls = pd.ExcelFile(uploaded_file)
+    sheet_names = xls.sheet_names
+
+    # Permite o usuário selecionar a planilha
+    selected_sheet = st.selectbox("Selecione a aba (sheet):", sheet_names)
+
+    # Lê a planilha selecionada
+    df = pd.read_excel(xls, sheet_name=selected_sheet)
+
+else:
+    st.warning("Por favor, faça o upload de um arquivo Excel contendo o Grafo (.xlsx)")
+    st.stop()
 
 # Criar o grafo direcionado
 G = nx.DiGraph()
@@ -29,19 +46,13 @@ for _, row in df.iterrows():
         for pred in predecessors:
             G.add_edge(pred, row['Código'])
 
-# Título da aplicação
-st.title("Visualização de Grafos direcionados")
 
-fig = generate_graph(G)
-
-# Mostrar o gráfico no Streamlit
-st.pyplot(fig)
 
 #CALCULAR CAMINHO CRÍTICO
 atividades = df["Atividade"].tolist()
 atividade_para_codigo = {f"{row['Atividade']} ({row['Código']})": row['Código'] for _, row in df.iterrows()}
-start_node = st.selectbox("Nó inicial:",list(atividade_para_codigo.keys()))
-end_node = st.selectbox("Nó final:", list(atividade_para_codigo.keys()))
+start_node = st.selectbox("Nó inicial para calcular caminho crítico:",list(atividade_para_codigo.keys()))
+end_node = st.selectbox("Nó final para calcular caminha crítico:", list(atividade_para_codigo.keys()))
 caminho_critico = {}
 
 
@@ -50,8 +61,12 @@ if st.button("Gerar Caminho Crítico"):
     codigo_para_atividade = df.set_index('Código')['Atividade'].to_dict()
     atividades_caminho = [codigo_para_atividade[codigo] for codigo in caminho_critico['caminho']]
     caminho_str = " -> ".join(atividades_caminho)
+   
+    fig = generate_graph(G, critical_path=caminho_critico['caminho'])
+    st.pyplot(fig)
     st.write("Caminho Crítico:", caminho_str)
     st.write("Peso Total:", caminho_critico['peso_total'])
-    fig = generate_graph(G, critical_path=caminho_critico['caminho'])
+else:
+    fig = generate_graph(G)
     st.pyplot(fig)
 
