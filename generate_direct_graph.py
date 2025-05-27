@@ -9,7 +9,7 @@ import streamlit as st
 cor_inicio = '#0072B2'    # Azul escuro
 cor_fim = '#E69F00'       # Laranja
 cor_intermediario = '#999999'  # Cinza escuro
-cor_critical = '#D55E00'  # Vermelho
+cor_critical = '#f00'  # Vermelho
 
 def generate_graph(G, critical_path=None):
     try:
@@ -43,7 +43,7 @@ def generate_graph(G, critical_path=None):
         if critical_path and u in critical_path and v in critical_path:
             if critical_path.index(v) - critical_path.index(u) == 1:
                 edge_colors.append(cor_critical)
-                edge_widths.append(2.5)
+                edge_widths.append(4)
             else:
                 edge_colors.append("black")
                 edge_widths.append(1.0)
