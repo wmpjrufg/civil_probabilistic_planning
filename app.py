@@ -12,8 +12,6 @@ except ImportError:
 
 st.title("Visualização de Grafos direcionados")
 # # Carregar os dados
-# df = pd.read_excel("exemplo_aldo_dorea_pag170livro.xlsx")
-# # df = pd.read_excel("exemplo2.xlsx")
 uploaded_file = st.file_uploader("Faça o upload do arquivo Excel para exibir o grafo", type=["xlsx"])
 
 if uploaded_file is not None:
