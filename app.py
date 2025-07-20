@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from caminho_critico_node import max_path_dag_node_weights
 from generate_direct_graph import generate_graph
+from parepy_toolbox import random_sampling
 
 # PROBABILISTIC
 
@@ -33,24 +34,51 @@ else:
     st.stop()
 
 # --------------------------------------------------------------------
-# Calculando distribuição triangular
+# Calculando distribuições
 
-df[['min', 'mode', 'max']] = df['Parâmetros'].str.split(',', expand=True).astype(float)
+distribuicao = df.loc[0,"Distribuição"]
 
 # Número de amostras
 n = 1000
 
-# Gerar DataFrame com amostras
 samples = {}
+params = {}
+# Calculando distribuição triangular
+if distribuicao == "triangular":
+    params = {
+        row["Código"]: {
+            "min": float(p[0]),
+            "mode": float(p[1]),
+            "max": float(p[2]),
+        }
+        for _, row in df.iterrows()
+        for p in [row["Parâmetros"].split(",")]
+    }
+# Calculando distribuição normal
+elif distribuicao == "normal":
+    params = {
+        row["Código"]: {
+            "mean": float(p[0]),
+            "std": float(p[1]),
+        }
+        for _, row in df.iterrows()
+        for p in [row["Parâmetros"].split(",")]
+    }
+else: 
+    print("Distribuição não suportada")
 
-for _, row in df.iterrows():
-    if row['Distribuição'] == 'triangular':
-        samples[row['Código']] = np.random.triangular(
-            left=row['min'], mode=row['mode'], right=row['max'], size=n
-        )
+# Geração das amostras
+for k, p in params.items():
+    samples[k] = random_sampling(
+        dist=distribuicao,
+        parameters=p,
+        method='lhs',
+        n_samples=n
+    )
 
-# Converter para DataFrame
+# Converter amostras para DataFrame
 df_amostras = pd.DataFrame(samples)
+# --------------------------------------------------------------------
 
 # Exibir os dois DataFrames
 st.subheader("Parâmetros das Atividades")
@@ -90,7 +118,7 @@ end_node = st.selectbox("Nó final para calcular caminha crítico:", list(ativid
 if st.button("Gerar Caminho Crítico"):
     for i in range(n):
         for codigo in df['Código']:
-            G.nodes[codigo]['Durações'] = df_amostras.at[i, codigo]
+            G.nodes[codigo]['Durações'] = df_amostras.at[i, codigo] #atribui o valor de cada atividade naquela amostra ao grafo
         
         try:
             pesos = {codigo: G.nodes[codigo]['Durações'] for codigo in G.nodes}
