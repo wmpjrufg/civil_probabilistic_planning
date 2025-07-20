@@ -2,8 +2,11 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from caminho_critico_node import max_path_dag_node_weights
 from generate_direct_graph import generate_graph
+
+# PROBABILISTIC
 
 try:
     from networkx.drawing.nx_pydot import graphviz_layout
@@ -29,6 +32,37 @@ else:
     st.warning("Por favor, faça o upload de um arquivo Excel contendo o Grafo (.xlsx)")
     st.stop()
 
+# --------------------------------------------------------------------
+# Calculando distribuição triangular
+
+df[['min', 'mode', 'max']] = df['Parâmetros'].str.split(',', expand=True).astype(float)
+
+# Número de amostras
+n = 1000
+
+# Gerar DataFrame com amostras
+samples = {}
+
+for _, row in df.iterrows():
+    if row['Distribuição'] == 'triangular':
+        samples[row['Código']] = np.random.triangular(
+            left=row['min'], mode=row['mode'], right=row['max'], size=n
+        )
+
+# Converter para DataFrame
+df_amostras = pd.DataFrame(samples)
+
+# Exibir os dois DataFrames
+st.subheader("Parâmetros das Atividades")
+st.dataframe(df)
+
+st.subheader(f"Amostras de Distribuições Triangulares (n={n})")
+st.dataframe(df_amostras)
+
+st.subheader("Estatísticas das Amostras")
+st.dataframe(df_amostras.describe().T)
+
+
 # Criar o grafo direcionado
 G = nx.DiGraph()
 G.graph['graph'] = {'rankdir': 'LR'}
@@ -36,7 +70,7 @@ G.graph['graph'] = {'rankdir': 'LR'}
 # Adicionar nós e arestas no grafo
 for _, row in df.iterrows():
     # Adiciona o nó (atividade)
-    G.add_node(row['Código'], label=row['Atividade'], duration=row['Durações'])
+    G.add_node(row['Código'], label=row['Atividade'])
     
     # Se houver predecessoras, adicionar aresta
     if row['Predecessoras'] != '-':
@@ -44,27 +78,38 @@ for _, row in df.iterrows():
         for pred in predecessors:
             G.add_edge(pred, row['Código'])
 
+#Mostrar grafo
+tempos_caminho_critico = []
+caminhos_encontrados = []
 
-
-#CALCULAR CAMINHO CRÍTICO
+#Selecionar nós para calcular caminho crítico
 atividades = df["Atividade"].tolist()
 atividade_para_codigo = {f"{row['Atividade']} ({row['Código']})": row['Código'] for _, row in df.iterrows()}
 start_node = st.selectbox("Nó inicial para calcular caminho crítico:",list(atividade_para_codigo.keys()))
 end_node = st.selectbox("Nó final para calcular caminha crítico:", list(atividade_para_codigo.keys()))
-caminho_critico = {}
-
-
 if st.button("Gerar Caminho Crítico"):
-    caminho_critico =  max_path_dag_node_weights(G, df.set_index('Código')['Durações'].to_dict(), atividade_para_codigo[start_node], atividade_para_codigo[end_node])
-    codigo_para_atividade = df.set_index('Código')['Atividade'].to_dict()
-    atividades_caminho = [codigo_para_atividade[codigo] for codigo in caminho_critico['caminho']]
-    caminho_str = " -> ".join(atividades_caminho)
-   
-    fig = generate_graph(G, critical_path=caminho_critico['caminho'])
-    st.pyplot(fig)
-    st.write("Caminho Crítico:", caminho_str)
-    st.write("Peso Total:", caminho_critico['peso_total'])
-else:
-    fig = generate_graph(G)
-    st.pyplot(fig)
+    for i in range(n):
+        for codigo in df['Código']:
+            G.nodes[codigo]['Durações'] = df_amostras.at[i, codigo]
+        
+        try:
+            pesos = {codigo: G.nodes[codigo]['Durações'] for codigo in G.nodes}
+            caminho = max_path_dag_node_weights(G, pesos, atividade_para_codigo[start_node], atividade_para_codigo[end_node])
+            caminhos_encontrados.append(" → ".join(caminho['caminho']))
+            tempos_caminho_critico.append(caminho['peso_total'])
+        except Exception as e:
+            caminhos_encontrados.append("Erro")
+            tempos_caminho_critico.append(np.nan)
+
+
+    df_resultado = pd.DataFrame({
+        "Caminho Crítico": caminhos_encontrados,
+        "Tempo Total": tempos_caminho_critico
+    })
+
+    st.subheader("Caminho Crítico por Amostra")
+    st.dataframe(df_resultado)
+
+    st.subheader("Estatísticas do Tempo Total do Caminho Crítico")
+    st.dataframe(df_resultado["Tempo Total"].describe().to_frame())
 
