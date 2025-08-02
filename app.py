@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from caminho_critico_node import max_path_dag_node_weights
 from generate_direct_graph import generate_graph
+from var_cvar import value_at_risk, conditional_value_at_risk
 from parepy_toolbox import random_sampling
 
 # PROBABILISTIC
@@ -36,10 +37,19 @@ else:
 # --------------------------------------------------------------------
 # Calculando distribuições
 
-distribuicao = df.loc[0,"Distribuição"]
+if "Distribuição" not in df.columns or pd.isna(df.loc[0, "Distribuição"]):
+    st.warning("Por favor, selecione uma aba válida que contenha a coluna 'Distribuição' com valor.")
+    st.stop()
+
+distribuicao = df.loc[0, "Distribuição"]
+
 
 # Número de amostras
-n = 1000
+n = st.number_input(label="Digite o número de amostras:", min_value=0, step=1, format="%d")
+if n is None or n <= 0:
+    st.warning("Por favor, insira um número inteiro positivo de amostras.")
+    st.stop()
+
 
 samples = {}
 params = {}
@@ -130,14 +140,36 @@ if st.button("Gerar Caminho Crítico"):
             tempos_caminho_critico.append(np.nan)
 
 
-    df_resultado = pd.DataFrame({
+    st.session_state.df_resultado = pd.DataFrame({
         "Caminho Crítico": caminhos_encontrados,
         "Tempo Total": tempos_caminho_critico
     })
 
     st.subheader("Caminho Crítico por Amostra")
-    st.dataframe(df_resultado)
+    st.dataframe(st.session_state.df_resultado)
 
     st.subheader("Estatísticas do Tempo Total do Caminho Crítico")
-    st.dataframe(df_resultado["Tempo Total"].describe().to_frame())
+    st.dataframe(st.session_state.df_resultado["Tempo Total"].describe().to_frame())
+
+if "df_resultado" in st.session_state:
+    df_resultado = st.session_state.df_resultado
+    st.title("Histograma")
+    tempos_finais = df_resultado["Tempo Total"].tolist()
+    fig, ax = plt.subplots()
+    ax.hist(tempos_finais, bins=30, color='skyblue', edgecolor='black', density=True)
+    ax.set_title("Distribuição do tempo total")
+    ax.set_xlabel("Valor")
+    ax.set_ylabel("Densidade")
+
+    st.pyplot(fig)
+
+    confidence_level = st.number_input("Digite a taxa de confiança:", min_value=0.00, max_value=1.00, step=0.01, format="%.2f")
+    if(confidence_level <= 0.00):
+        st.warning("Digite uma taxa de confiança para calcular o Var e Cvar")
+        st.stop()
+    var = value_at_risk(tempos_finais, confidence_level=confidence_level)
+
+    cvar = conditional_value_at_risk(tempos_finais,confidence_level=confidence_level)
+
+    st.write(f"Em {confidence_level}% de confiaça o var é de {var:.2f} e o cvar é de {cvar:.2f}")
 
