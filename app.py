@@ -171,5 +171,5 @@ if "df_resultado" in st.session_state:
 
     cvar = conditional_value_at_risk(tempos_finais,confidence_level=confidence_level)
 
-    st.write(f"Em {confidence_level*100}% de confiaça o var é de {var:.2f} e o cvar é de {cvar:.2f}")
-
+    # st.write(f"Em {confidence_level*100}% de confiança o var é de {var:.2f} e o cvar é de {cvar:.2f}")
+    st.write(f"Com {confidence_level*100}% de confiança, o tempo da obra não excederá {var:.2f} dias. Nos cenários restante e não otimistas, o atraso médio será de {cvar:.2f} dias.")

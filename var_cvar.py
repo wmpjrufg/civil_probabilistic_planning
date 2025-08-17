@@ -12,8 +12,9 @@ def value_at_risk(data, confidence_level=0.95):
         float: Valor de VaR no nível de confiança especificado.
     """
     data = np.array(data)
-    var = np.percentile(data, (1 - confidence_level) * 100)
+    var = np.percentile(data, (confidence_level) * 100)
     return var
+
 
 def conditional_value_at_risk(data, confidence_level=0.95):
     """
@@ -28,5 +29,5 @@ def conditional_value_at_risk(data, confidence_level=0.95):
     """
     data = np.array(data)
     var = value_at_risk(data, confidence_level)
-    cvar = data[data <= var].mean()
+    cvar = data[data >= var].mean()
     return cvar
