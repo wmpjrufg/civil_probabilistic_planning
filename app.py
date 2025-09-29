@@ -18,9 +18,9 @@ try:
 except ImportError:
     st.error("The graphviz module is not installed. Install it with: pip install pygraphviz or pydot.")
 
-st.title("Directed Graph Visualization")
+st.title("Probabilistic Project Planning")
 # # Carregar os dados
-uploaded_file = st.file_uploader("Upload the Excel file to display the graph", type=["xlsx"])
+uploaded_file = st.file_uploader("Upload the Excel file with project data", type=["xlsx"])
 
 if uploaded_file is not None:
     # Carrega todas as planilhas disponíveis
@@ -78,7 +78,7 @@ elif distribuicao == "normal":
         for p in [row["Parâmetros"].split(",")]
     }
 else: 
-    print("Distribuição não suportada")
+    st.error("Unsupported distribution specified in the Excel file.")
 
 # Geração das amostras
 for k, p in params.items():
@@ -139,7 +139,7 @@ if st.button("Generate Critical Path"):
             caminhos_encontrados.append(" → ".join(caminho['caminho']))
             tempos_caminho_critico.append(caminho['peso_total'])
         except Exception as e:
-            caminhos_encontrados.append("Erro")
+            caminhos_encontrados.append("Error")
             tempos_caminho_critico.append(np.nan)
 
 
@@ -156,7 +156,7 @@ if st.button("Generate Critical Path"):
 
 if "df_resultado" in st.session_state:
     df_resultado = st.session_state.df_resultado
-    st.title("Histogram")
+    st.header("Monte Carlo Simulation Results")
     tempos_finais = df_resultado["Tempo Total"].tolist()
     fig, ax = plt.subplots()
     ax.hist(tempos_finais, bins=30, color='skyblue', edgecolor='black', density=True)
@@ -175,13 +175,14 @@ if "df_resultado" in st.session_state:
     cvar = conditional_value_at_risk(tempos_finais,confidence_level=confidence_level)
 
     # st.write(f"Em {confidence_level*100}% de confiança o var é de {var:.2f} e o cvar é de {cvar:.2f}")
-    st.write(f"With {confidence_level*100}% confidence, the construction time will not exceed {var:.2f} days. In the remaining and non-optimistic scenarios, the average time will be {cvar:.2f} days.")
+    st.metric(label=f"Value at Risk (VaR) at {confidence_level*100:.0f}%", value=f"{var:.2f} days", help="The project duration will not exceed this value with the specified confidence.")
+    st.metric(label=f"Conditional VaR (CVaR) at {confidence_level*100:.0f}%", value=f"{cvar:.2f} days", help="In the worst-case scenarios (beyond the VaR), this is the expected average project duration.")
 
 # ------------------- REDE BAYESIANA -------------------
-st.header("Análise com Rede Bayesiana")
+st.header("Bayesian Network Analysis")
 
-if st.button("Analisar com Rede Bayesiana"):
-    with st.spinner("Discretizando amostras e construindo a Rede Bayesiana... Isso pode levar alguns minutos."):
+if st.button("Analyze with Bayesian Network"):
+    with st.spinner("Discretizing samples and building the Bayesian Network... This may take a few minutes."):
  
         params_discretizacao = discretizar_por_dias_inteiros(df_amostras)
 
@@ -192,13 +193,13 @@ if st.button("Analisar com Rede Bayesiana"):
 
         nos_finais_grafo = [n for n, d in G.out_degree() if d == 0]
         if not nos_finais_grafo:
-            st.error("Não foi possível encontrar um nó final no grafo do projeto.")
+            st.error("Could not find an end node in the project graph.")
             st.session_state.clear()
             st.stop()
         
         # Assumindo um único nó final para simplificar
         no_final_projeto = nos_finais_grafo[0]
-        st.write(f"Nó final do projeto identificado para inferência: T_{no_final_projeto}")
+        st.info(f"Project end node identified for inference: T_{no_final_projeto}")
 
         inferencia = VariableElimination(modelo_bayesiano)
         resultado_inferencia = inferencia.query(variables=[f"T_{no_final_projeto}"], show_progress=False)
@@ -207,11 +208,11 @@ if st.button("Analisar com Rede Bayesiana"):
         st.session_state.no_final_projeto_bayesiano = no_final_projeto
 
 if "resultado_bayesiano" in st.session_state:
-    st.subheader("Resultado da Inferência Bayesiana")
+    st.subheader("Bayesian Inference Result (Prior Probability)")
     resultado_inferencia = st.session_state.resultado_bayesiano
     no_final_projeto = st.session_state.no_final_projeto_bayesiano
 
-    st.write(f"Distribuição de Probabilidade para o término do projeto (T_{no_final_projeto}):")
+    st.write(f"Probability distribution for project completion (T_{no_final_projeto}):")
     
     # Extrair valores e probabilidades para o histograma
     variable_name = resultado_inferencia.variables[0]
@@ -220,35 +221,41 @@ if "resultado_bayesiano" in st.session_state:
 
     fig_bn, ax_bn = plt.subplots()
     ax_bn.bar(tempos_bn, probabilidades_bn, color='coral', edgecolor='black')
-    ax_bn.set_title("Distribuição do Tempo Total (Rede Bayesiana)")
-    ax_bn.set_xlabel("Dias para Conclusão")
-    ax_bn.set_ylabel("Probabilidade")
+    ax_bn.set_title("Total Time Distribution (Bayesian Network))")
+    ax_bn.set_xlabel("Days to Completion")
+    ax_bn.set_ylabel("Probability")
     st.pyplot(fig_bn)
 
     # --- Seção de Evidências ---
-    st.subheader("Análise Condicional com Evidências")
-    st.write("Selecione a duração de uma ou mais atividades para ver como isso afeta a data de término do projeto.")
+    st.subheader("Conditional Analysis with Evidence")
+    st.write("Select the duration of one or more activities to see how it affects the project's end date.")
 
     params_discretizacao = st.session_state.params_discretizacao_bayesiano
     
     evidence_values = {}
     cols = st.columns(3)
     col_idx = 0
-
-    for codigo, params in params_discretizacao.items():
-        label = f"Duração de '{df[df['Código'] == codigo]['Atividade'].values[0]}'"
-        # Adiciona uma opção para não especificar a evidência
-        options = ["Não especificado"] + params['labels']
-        selected_value = cols[col_idx].selectbox(label, options=options, key=f"evidence_{codigo}")
+    
+    with st.form(key='evidence_form'):
+        for codigo, params in params_discretizacao.items():
+            label = f"Duration of '{df[df['Código'] == codigo]['Atividade'].values[0]}'"
+            # Adiciona uma opção para não especificar a evidência
+            options = ["Not specified"] + params['labels']
+            selected_value = cols[col_idx].selectbox(label, options=options, key=f"evidence_{codigo}")
+            
+            if selected_value != "Not specified":
+                # O valor selecionado já é o estado correto (int)
+                evidence_values[f"D_{codigo}"] = selected_value
+            
+            col_idx = (col_idx + 1) % 3
         
-        if selected_value != "Não especificado":
-            # O valor selecionado já é o estado correto (int)
-            evidence_values[f"D_{codigo}"] = selected_value
-        
-        col_idx = (col_idx + 1) % 3
+        submitted = st.form_submit_button("Analyze with Evidence")
 
-    if st.button("Analisar com Evidência"):
-        with st.spinner("Calculando inferência com as evidências fornecidas..."):
+    if submitted:
+        if not evidence_values:
+            st.warning("Please select at least one evidence value to run the conditional analysis.")
+        else:
+            st.spinner("Calculating inference with the provided evidence...")
             modelo_bayesiano = st.session_state.modelo_bayesiano
             no_final_projeto = st.session_state.no_final_projeto_bayesiano
 
@@ -259,7 +266,7 @@ if "resultado_bayesiano" in st.session_state:
                 show_progress=False
             )
 
-            st.write("Distribuição de Probabilidade Condicional:")
+            st.write("Conditional Probability Distribution:")
             variable_name = resultado_condicional.variables[0]
             tempos_bn_cond = resultado_condicional.state_names[variable_name]
             probabilidades_bn_cond = resultado_condicional.values
@@ -267,7 +274,7 @@ if "resultado_bayesiano" in st.session_state:
             # st.bar_chart(pd.DataFrame(probabilidades_bn_cond, index=tempos_bn_cond))
             fig_bn, ax_bn = plt.subplots()
             ax_bn.bar(tempos_bn_cond, probabilidades_bn_cond, color='coral', edgecolor='black')
-            ax_bn.set_title("Distribuição do Tempo Total (Rede Bayesiana)")
-            ax_bn.set_xlabel("Dias para Conclusão")
-            ax_bn.set_ylabel("Probabilidade")
+            ax_bn.set_title("Total Time Distribution (Bayesian Network)")
+            ax_bn.set_xlabel("Days to Completion")
+            ax_bn.set_ylabel("Probability")
             st.pyplot(fig_bn)
