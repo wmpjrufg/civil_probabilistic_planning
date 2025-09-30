@@ -48,10 +48,11 @@ distribuicao = df.loc[0, "Distribuição"]
 
 
 # Número de amostras
-n = st.number_input(label="Enter the number of samples:", min_value=0, step=1, format="%d")
-if n is None or n <= 0:
-    st.warning("Please enter a positive integer number of samples.")
-    st.stop()
+n=10000
+# n = st.number_input(label="Enter the number of samples:", min_value=0, step=1, format="%d")
+# if n is None or n <= 0:
+#     st.warning("Please enter a positive integer number of samples.")
+#     st.stop()
 
 
 samples = {}
@@ -94,11 +95,11 @@ df_amostras = pd.DataFrame(samples)
 # --------------------------------------------------------------------
 
 # Exibir os dois DataFrames
-st.subheader("Activity parameters")
+st.header("Activity parameters")
 st.dataframe(df)
 
-st.subheader(f"Sample Distributions (n={n})")
-st.dataframe(df_amostras)
+# st.subheader(f"Sample Distributions (n={n})")
+# st.dataframe(df_amostras)
 
 st.subheader("Sample Statistics")
 st.dataframe(df_amostras.describe().T)
@@ -123,11 +124,25 @@ for _, row in df.iterrows():
 tempos_caminho_critico = []
 caminhos_encontrados = []
 
+nos_finais_grafo = [n for n, d in G.out_degree() if d == 0]
+if not nos_finais_grafo:
+    st.error("Could not find an end node in the project graph.")
+    st.session_state.clear()
+    st.stop()
+
+# Assumindo um único nó final para simplificar
+no_final_projeto = nos_finais_grafo[0]
+
 #Selecionar nós para calcular caminho crítico
 atividades = df["Atividade"].tolist()
+st.header("Graph analysis")
+st.write("Default pattern: Using first activity as start node and last activity as end node from Excel data.")
+
 atividade_para_codigo = {f"{row['Atividade']} ({row['Código']})": row['Código'] for _, row in df.iterrows()}
-start_node = st.selectbox("Starting node to calculate critical path:",list(atividade_para_codigo.keys()))
-end_node = st.selectbox("End node to calculate critical path", list(atividade_para_codigo.keys()))
+opcoes = list(atividade_para_codigo.keys())
+valor_default = [k for k, v in atividade_para_codigo.items() if v == no_final_projeto][0]
+start_node = st.selectbox("Enter start node for critical path::",opcoes)
+end_node = st.selectbox("Enter end node for critical path:", list(atividade_para_codigo.keys()), index=opcoes.index(valor_default))
 if st.button("Generate Critical Path"):
     for i in range(n):
         for codigo in df['Código']:
@@ -145,27 +160,28 @@ if st.button("Generate Critical Path"):
 
     st.session_state.df_resultado = pd.DataFrame({
         "Caminho Crítico": caminhos_encontrados,
-        "Tempo Total": tempos_caminho_critico
+        "Makespan": tempos_caminho_critico
     })
 
-    st.subheader("Critical Path by Sample")
-    st.dataframe(st.session_state.df_resultado)
+    # st.subheader("Critical Path by Sample")
+    # st.dataframe(st.session_state.df_resultado)
 
-    st.subheader("Total Critical Path Time Statistics")
-    st.dataframe(st.session_state.df_resultado["Tempo Total"].describe().to_frame())
+    st.subheader("Critical Path Statistics")
+    st.dataframe(st.session_state.df_resultado["Makespan"].describe().to_frame())
 
 if "df_resultado" in st.session_state:
     df_resultado = st.session_state.df_resultado
-    st.header("Monte Carlo Simulation Results")
-    tempos_finais = df_resultado["Tempo Total"].tolist()
+    st.subheader("Makespan Scenarios")
+    tempos_finais = df_resultado["Makespan"].tolist()
     fig, ax = plt.subplots()
     ax.hist(tempos_finais, bins=30, color='skyblue', edgecolor='black', density=True)
-    ax.set_title("Total time distribution")
-    ax.set_xlabel("Value")
+    ax.set_title("Project Makespan Distribution")
+    ax.set_xlabel("Days")
     ax.set_ylabel("Density")
 
     st.pyplot(fig)
 
+    st.header("Risk Analysis")
     confidence_level = st.number_input("Enter the confidence rate:", min_value=0.00, max_value=1.00, step=0.01, format="%.2f")
     if(confidence_level <= 0.00):
         st.warning("Enter a confidence rate to calculate Var and Cvar")
@@ -174,7 +190,6 @@ if "df_resultado" in st.session_state:
 
     cvar = conditional_value_at_risk(tempos_finais,confidence_level=confidence_level)
 
-    # st.write(f"Em {confidence_level*100}% de confiança o var é de {var:.2f} e o cvar é de {cvar:.2f}")
     st.metric(label=f"Value at Risk (VaR) at {confidence_level*100:.0f}%", value=f"{var:.2f} days", help="The project duration will not exceed this value with the specified confidence.")
     st.metric(label=f"Conditional VaR (CVaR) at {confidence_level*100:.0f}%", value=f"{cvar:.2f} days", help="In the worst-case scenarios (beyond the VaR), this is the expected average project duration.")
 
@@ -190,16 +205,8 @@ if st.button("Analyze with Bayesian Network"):
 
         modelo_bayesiano = construir_rede_bayesiana_generica(df, params_discretizacao)
         st.session_state.modelo_bayesiano = modelo_bayesiano
-
-        nos_finais_grafo = [n for n, d in G.out_degree() if d == 0]
-        if not nos_finais_grafo:
-            st.error("Could not find an end node in the project graph.")
-            st.session_state.clear()
-            st.stop()
         
-        # Assumindo um único nó final para simplificar
-        no_final_projeto = nos_finais_grafo[0]
-        st.info(f"Project end node identified for inference: T_{no_final_projeto}")
+        # st.info(f"Project end node identified for inference: T_{no_final_projeto}")
 
         inferencia = VariableElimination(modelo_bayesiano)
         resultado_inferencia = inferencia.query(variables=[f"T_{no_final_projeto}"], show_progress=False)
@@ -208,11 +215,11 @@ if st.button("Analyze with Bayesian Network"):
         st.session_state.no_final_projeto_bayesiano = no_final_projeto
 
 if "resultado_bayesiano" in st.session_state:
-    st.subheader("Bayesian Inference Result (Prior Probability)")
+    # st.subheader("Bayesian Inference Result (Prior Probability)")
     resultado_inferencia = st.session_state.resultado_bayesiano
     no_final_projeto = st.session_state.no_final_projeto_bayesiano
 
-    st.write(f"Probability distribution for project completion (T_{no_final_projeto}):")
+    # st.write(f"Probability distribution for project completion (T_{no_final_projeto}):")
     
     # Extrair valores e probabilidades para o histograma
     variable_name = resultado_inferencia.variables[0]
@@ -224,10 +231,10 @@ if "resultado_bayesiano" in st.session_state:
     ax_bn.set_title("Total Time Distribution (Bayesian Network))")
     ax_bn.set_xlabel("Days to Completion")
     ax_bn.set_ylabel("Probability")
-    st.pyplot(fig_bn)
+    # st.pyplot(fig_bn)
 
     # --- Seção de Evidências ---
-    st.subheader("Conditional Analysis with Evidence")
+    st.subheader("Conditional Analysis with Belief Updating")
     st.write("Select the duration of one or more activities to see how it affects the project's end date.")
 
     params_discretizacao = st.session_state.params_discretizacao_bayesiano
@@ -274,7 +281,7 @@ if "resultado_bayesiano" in st.session_state:
             # st.bar_chart(pd.DataFrame(probabilidades_bn_cond, index=tempos_bn_cond))
             fig_bn, ax_bn = plt.subplots()
             ax_bn.bar(tempos_bn_cond, probabilidades_bn_cond, color='coral', edgecolor='black')
-            ax_bn.set_title("Total Time Distribution (Bayesian Network)")
-            ax_bn.set_xlabel("Days to Completion")
+            ax_bn.set_title("Makespan")
+            ax_bn.set_xlabel("Days")
             ax_bn.set_ylabel("Probability")
             st.pyplot(fig_bn)
