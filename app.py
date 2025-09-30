@@ -1,3 +1,5 @@
+from io import BytesIO
+import warnings
 import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -11,6 +13,7 @@ from complex_network.discretize_samples import discretizar_por_dias_inteiros
 from complex_network.create_bayesian_network import construir_rede_bayesiana_generica
 from pgmpy.inference import VariableElimination
 
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="torch._classes")
 # PROBABILISTIC
 
 try:
@@ -196,23 +199,22 @@ if "df_resultado" in st.session_state:
 # ------------------- REDE BAYESIANA -------------------
 st.header("Bayesian Network Analysis")
 
-if st.button("Analyze with Bayesian Network"):
-    with st.spinner("Discretizing samples and building the Bayesian Network... This may take a few minutes."):
- 
-        params_discretizacao = discretizar_por_dias_inteiros(df_amostras)
+with st.spinner("Discretizing samples and building the Bayesian Network... This may take a few minutes."):
 
-        st.session_state.params_discretizacao_bayesiano = params_discretizacao
+    params_discretizacao = discretizar_por_dias_inteiros(df_amostras)
 
-        modelo_bayesiano = construir_rede_bayesiana_generica(df, params_discretizacao)
-        st.session_state.modelo_bayesiano = modelo_bayesiano
-        
-        # st.info(f"Project end node identified for inference: T_{no_final_projeto}")
+    st.session_state.params_discretizacao_bayesiano = params_discretizacao
 
-        inferencia = VariableElimination(modelo_bayesiano)
-        resultado_inferencia = inferencia.query(variables=[f"T_{no_final_projeto}"], show_progress=False)
+    modelo_bayesiano = construir_rede_bayesiana_generica(df, params_discretizacao)
+    st.session_state.modelo_bayesiano = modelo_bayesiano
+    
+    # st.info(f"Project end node identified for inference: T_{no_final_projeto}")
 
-        st.session_state.resultado_bayesiano = resultado_inferencia
-        st.session_state.no_final_projeto_bayesiano = no_final_projeto
+    inferencia = VariableElimination(modelo_bayesiano)
+    resultado_inferencia = inferencia.query(variables=[f"T_{no_final_projeto}"], show_progress=False)
+
+    st.session_state.resultado_bayesiano = resultado_inferencia
+    st.session_state.no_final_projeto_bayesiano = no_final_projeto
 
 if "resultado_bayesiano" in st.session_state:
     # st.subheader("Bayesian Inference Result (Prior Probability)")
@@ -275,13 +277,33 @@ if "resultado_bayesiano" in st.session_state:
 
             st.write("Conditional Probability Distribution:")
             variable_name = resultado_condicional.variables[0]
-            tempos_bn_cond = resultado_condicional.state_names[variable_name]
-            probabilidades_bn_cond = resultado_condicional.values
+            time_bn_cond = resultado_condicional.state_names[variable_name]
+            probs_bn_cond = resultado_condicional.values
+            print(time_bn_cond, probs_bn_cond)
 
-            # st.bar_chart(pd.DataFrame(probabilidades_bn_cond, index=tempos_bn_cond))
+            # st.bar_chart(pd.DataFrame(probs_bn_cond, index=time_bn_cond))
             fig_bn, ax_bn = plt.subplots()
-            ax_bn.bar(tempos_bn_cond, probabilidades_bn_cond, color='coral', edgecolor='black')
+            ax_bn.bar(time_bn_cond, probs_bn_cond, color='coral', edgecolor='black')
             ax_bn.set_title("Makespan")
             ax_bn.set_xlabel("Days")
             ax_bn.set_ylabel("Probability")
             st.pyplot(fig_bn)
+
+            idx_max = np.argmax(probs_bn_cond)
+            most_probable_value = time_bn_cond[idx_max]
+            most_probable_prob = probs_bn_cond[idx_max]
+
+            # Valores mínimo e máximo possíveis
+            states = np.array(time_bn_cond)
+            probs = np.array(probs_bn_cond, dtype=float)
+            # Filtrar apenas os estados com probabilidade > 0
+            states_valid = states[probs > 0]
+
+            # Pegar min e max somente desses estados
+            valor_min = states_valid.min()
+            valor_max = states_valid.max()
+
+            st.write("Results")
+            st.write(f"- **Min:** {valor_min} days")
+            st.write(f"- **Max:** {valor_max} days")
+            st.write(f"- **Most probable scenario:** {most_probable_value} days (p={most_probable_prob:.2f})")
