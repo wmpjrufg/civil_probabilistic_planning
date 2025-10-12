@@ -7,14 +7,14 @@ import pandas as pd
 import numpy as np
 from caminho_critico_node import max_path_dag_node_weights
 from generate_direct_graph import generate_graph
+from probabilist_project_plan import generate_samples
 from var_cvar import value_at_risk, conditional_value_at_risk
-from parepy_toolbox import random_sampling
-from complex_network.discretize_samples import discretizar_por_dias_inteiros
-from complex_network.create_bayesian_network import construir_rede_bayesiana_generica
+
+from complex_network.discretize_samples import discretize_by_whole_days
+from complex_network.create_bayesian_network import build_generic_bayesian_network
 from pgmpy.inference import VariableElimination
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, module="torch._classes")
-# PROBABILISTIC
 
 try:
     from networkx.drawing.nx_pydot import graphviz_layout
@@ -57,44 +57,7 @@ n=10000
 #     st.warning("Please enter a positive integer number of samples.")
 #     st.stop()
 
-
-samples = {}
-params = {}
-# Calculando distribuição triangular
-if distribuicao == "triangular":
-    params = {
-        row["Código"]: {
-            "min": float(p[0]),
-            "mode": float(p[1]),
-            "max": float(p[2]),
-        }
-        for _, row in df.iterrows()
-        for p in [row["Parâmetros"].split(",")]
-    }
-# Calculando distribuição normal
-elif distribuicao == "normal":
-    params = {
-        row["Código"]: {
-            "mean": float(p[0]),
-            "std": float(p[1]),
-        }
-        for _, row in df.iterrows()
-        for p in [row["Parâmetros"].split(",")]
-    }
-else: 
-    st.error("Unsupported distribution specified in the Excel file.")
-
-# Geração das amostras
-for k, p in params.items():
-    samples[k] = random_sampling(
-        dist=distribuicao,
-        parameters=p,
-        method='lhs',
-        n_samples=n
-    )
-
-# Converter amostras para DataFrame
-df_amostras = pd.DataFrame(samples)
+df_amostras = generate_samples(df, distribuicao, n)
 # --------------------------------------------------------------------
 
 # Exibir os dois DataFrames
@@ -201,11 +164,11 @@ st.header("Bayesian Network Analysis")
 
 with st.spinner("Discretizing samples and building the Bayesian Network... This may take a few minutes."):
 
-    params_discretizacao = discretizar_por_dias_inteiros(df_amostras)
+    params_discretizacao = discretize_by_whole_days(df_amostras)
 
     st.session_state.params_discretizacao_bayesiano = params_discretizacao
 
-    modelo_bayesiano = construir_rede_bayesiana_generica(df, params_discretizacao)
+    modelo_bayesiano = build_generic_bayesian_network(df, params_discretizacao)
     st.session_state.modelo_bayesiano = modelo_bayesiano
     
     # st.info(f"Project end node identified for inference: T_{no_final_projeto}")

@@ -1,31 +1,41 @@
 import numpy as np
+import pandas as pd
 
 
-def discretizar_por_dias_inteiros(df_amostras):
+def discretize_by_whole_days(samples_df: pd.DataFrame) -> dict:
     """
-    Discretiza as amostras arredondando para o dia inteiro mais próximo.
-    Os estados são os próprios dias. As probabilidades são suas frequências.
+    Discretizes activity duration samples by rounding them to the nearest whole day.
+
+    This function takes a DataFrame of continuous duration samples for various project
+    activities and converts them into a discrete probability distribution. Each unique
+    rounded day becomes a discrete state, and its probability is determined by its
+    frequency in the rounded samples.
+
+    :param samples_df: A pandas DataFrame where each column represents an activity
+                       and contains its continuous duration samples.
+    :return: A dictionary where each key is an activity code. The value is another
+             dictionary containing the discrete 'labels' (states), a 'value_map'
+             from state to value, and their corresponding 'probs' (probabilities).
     """
-    # 1. Arredonda todas as amostras para o inteiro mais próximo e converte para int
-    df_arredondado = np.round(df_amostras).astype(int)
+    # 1. Round all samples to the nearest integer and convert to int
+    rounded_df = np.round(samples_df).astype(int)
     
-    parametros_discretizacao = {}
-    print("\nDiscretizando por Dias Inteiros (arredondamento):")
+    discretization_params = {}
+    print("\nDiscretizing by Whole Days (rounding):")
 
-    for atividade_codigo in df_arredondado.columns:
-        counts = df_arredondado[atividade_codigo].value_counts(normalize=True).sort_index()
+    for activity_code in rounded_df.columns:
+        counts = rounded_df[activity_code].value_counts(normalize=True).sort_index()
 
-        estados = counts.index.tolist()
-        probabilidades = counts.values.tolist()
+        states = counts.index.tolist()
+        probabilities = counts.values.tolist()
      
-        value_map = {estado: estado for estado in estados}
+        value_map = {state: state for state in states}
         
-        parametros_discretizacao[atividade_codigo] = {
-            'labels': estados,
+        discretization_params[activity_code] = {
+            'labels': states,
             'value_map': value_map,
-            'probs': probabilidades
+            'probs': probabilities
         }
-        # Este print mostrará o aumento da complexidade (número de estados)
-        print(f" - Atividade {atividade_codigo}: {len(estados)} estados -> {estados}")
+        print(f" - Activity {activity_code}: {len(states)} states -> {states}")
         
-    return parametros_discretizacao
+    return discretization_params
