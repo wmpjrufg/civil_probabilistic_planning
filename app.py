@@ -1,4 +1,5 @@
 from io import BytesIO
+import io
 import warnings
 import streamlit as st
 import networkx as nx
@@ -112,12 +113,12 @@ end_node = st.selectbox("Enter end node for critical path:", list(atividade_para
 if st.button("Generate Critical Path"):
     for i in range(n):
         for codigo in df['Código']:
-            G.nodes[codigo]['Durações'] = df_amostras.at[i, codigo] #atribui o valor de cada atividade naquela amostra ao grafo
+            G.nodes[codigo]['duration'] = df_amostras.at[i, codigo] #atribui o valor de cada atividade naquela amostra ao grafo
         
         try:
-            pesos = {codigo: G.nodes[codigo]['Durações'] for codigo in G.nodes}
+            pesos = {codigo: G.nodes[codigo]['duration'] for codigo in G.nodes}
             caminho = max_path_dag_node_weights(G, pesos, atividade_para_codigo[start_node], atividade_para_codigo[end_node])
-            caminhos_encontrados.append(" → ".join(caminho['caminho']))
+            caminhos_encontrados.append(caminho['caminho'])
             tempos_caminho_critico.append(caminho['peso_total'])
         except Exception as e:
             caminhos_encontrados.append("Error")
@@ -146,6 +147,25 @@ if "df_resultado" in st.session_state:
     ax.set_ylabel("Density")
 
     st.pyplot(fig)
+# GENERATE CRITICAL PATH IMAGE -----------------
+    mediana_makespan = np.median(st.session_state.df_resultado["Makespan"])
+    idx_mediano = (st.session_state.df_resultado["Makespan"] - mediana_makespan).abs().idxmin()
+    caminho_critico_mediano = st.session_state.df_resultado.loc[idx_mediano, "Caminho Crítico"]
+    for codigo in G.nodes:
+        G.nodes[codigo]['duration'] = round(df_amostras.at[idx_mediano, codigo], 2)
+    fig = generate_graph(G, critical_path=caminho_critico_mediano)
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight")
+    buf.seek(0)
+
+    st.download_button(
+        label="📥 Download Critical Path Image",
+        data=buf,
+        file_name="critical_path.png",
+        mime="image/png"
+    )
+# --------------------------------------------------------------------
 
     st.header("Risk Analysis")
     confidence_level = st.number_input("Enter the confidence rate:", min_value=0.00, max_value=1.00, step=0.01, format="%.2f")

@@ -5,44 +5,63 @@ import matplotlib.lines as mlines
 from networkx.drawing.nx_pydot import graphviz_layout
 import streamlit as st
 
-# Cores
-cor_inicio = '#0072B2'    # Azul escuro
-cor_fim = '#E69F00'       # Laranja
-cor_intermediario = '#999999'  # Cinza escuro
-cor_critical = '#f00'  # Vermelho
+# Colors
+START_NODE_COLOR = '#0072B2'    # Dark Blue
+END_NODE_COLOR = '#E69F00'       # Orange
+INTERMEDIATE_NODE_COLOR = '#999999'  # Dark Gray
+CRITICAL_PATH_COLOR = '#D55E00'  # Vermilion (better for colorblindness than pure red)
 
-def generate_graph(G, critical_path=None):
+def generate_graph(G: nx.DiGraph, critical_path: list = None) -> plt.Figure:
+    """
+    Generates a plot of the project graph, highlighting the critical path.
+
+    This function takes a NetworkX DiGraph and an optional critical path, then
+    creates a matplotlib Figure visualizing the project network. It colors nodes
+    based on their role (start, end, intermediate) and highlights the edges
+    and nodes belonging to the critical path.
+
+    :param G: The NetworkX DiGraph object representing the project network.
+              Nodes are expected to have 'label' and 'duration' attributes.
+    :param critical_path: A list of node identifiers representing the critical path.
+                          If provided, these nodes and their connecting edges will be
+                          highlighted. Defaults to None.
+    :return: A matplotlib Figure object containing the plotted graph.
+    """
     try:
         pos = graphviz_layout(G, prog="dot")
     except ImportError:
-        st.error("Erro: o módulo graphviz não está instalado. Instale com: pip install pygraphviz ou pydot.")
+        st.error(
+            "Error: The graphviz layout module is not installed. "
+            "Please install it with: `pip install pygraphviz` or `pip install pydot`."
+        )
         st.stop()
     except Exception as e:
-        st.error(f"Erro ao aplicar layout do Graphviz: {e}")
+        st.error(f"Error applying Graphviz layout: {e}")
         st.stop()
 
-    # Identificar nós iniciais e finais
-    nos_iniciais = [n for n, d in G.in_degree() if d == 0]
-    nos_finais = [n for n, d in G.out_degree() if d == 0]
+    # Identify start and end nodes
+    start_nodes = [n for n, d in G.in_degree() if d == 0]
+    end_nodes = [n for n, d in G.out_degree() if d == 0]
 
     fig, ax = plt.subplots(figsize=(12, 10))
     
     node_colors = []
     for node in G.nodes():
-        if node in nos_iniciais:
-            node_colors.append(cor_inicio)
-        elif node in nos_finais:
-            node_colors.append(cor_fim)
+        if node in start_nodes:
+            node_colors.append(START_NODE_COLOR)
+        elif node in end_nodes:
+            node_colors.append(END_NODE_COLOR)
         else:
-            node_colors.append(cor_intermediario)
+            node_colors.append(INTERMEDIATE_NODE_COLOR)
 
-    # Cores das arestas (vermelho para caminho crítico)
+    # Edge colors (highlighting the critical path)
     edge_colors = []
     edge_widths = []
     for u, v in G.edges():
         if critical_path and u in critical_path and v in critical_path:
+            # Check if the edge is part of the sequential critical path
             if critical_path.index(v) - critical_path.index(u) == 1:
-                edge_colors.append(cor_critical)
+                edge_colors.append(CRITICAL_PATH_COLOR)
                 edge_widths.append(4)
             else:
                 edge_colors.append("black")
@@ -51,7 +70,7 @@ def generate_graph(G, critical_path=None):
             edge_colors.append("black")
             edge_widths.append(1.0)
 
-    # Desenhar os nós
+    # Draw the graph
     nx.draw_networkx(
         G,
         pos,
@@ -67,17 +86,16 @@ def generate_graph(G, critical_path=None):
         labels={node: f"{G.nodes[node]['label']}\n({G.nodes[node]['duration']})" for node in G.nodes},
         ax=ax
     )
-    #Legendas
-    legenda = [
-        mpatches.Patch(color=cor_inicio, label='Nó Inicial'),
-        mpatches.Patch(color=cor_fim, label='Nó Final'),
-        mpatches.Patch(color=cor_intermediario, label='Nó Intermediário'),
-        
-        ]
+    # Legends
+    legend_handles = [
+        mpatches.Patch(color=START_NODE_COLOR, label='Start Node'),
+        mpatches.Patch(color=END_NODE_COLOR, label='End Node'),
+        mpatches.Patch(color=INTERMEDIATE_NODE_COLOR, label='Intermediate Node'),
+    ]
     if critical_path:
-        legenda.append(mlines.Line2D([], [], color=cor_critical, lw=2, label='Caminho Crítico'))
+        legend_handles.append(mlines.Line2D([], [], color=CRITICAL_PATH_COLOR, lw=4, label='Critical Path'))
 
-    ax.legend(handles=legenda, loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=3, frameon=False)
+    ax.legend(handles=legend_handles, loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=4, frameon=False)
 
     ax.set_axis_off()
     plt.tight_layout()
