@@ -28,9 +28,9 @@ def build_generic_bayesian_network(project_df: pd.DataFrame, discretization_para
     """
     dependency_graph = nx.DiGraph()
     for _, row in project_df.iterrows():
-        if row['Predecessoras'] != '-':
-            for pred in row['Predecessoras'].split(','):
-                dependency_graph.add_edge(pred, row['Código'])
+        if row['Predecessors'] != '-':
+            for pred in row['Predecessors'].split(','):
+                dependency_graph.add_edge(pred, row['Code'])
     
     # Estimate the number of completion states required (sum of maximum durations on the longest path)
     max_duration_sum = 0
@@ -45,16 +45,16 @@ def build_generic_bayesian_network(project_df: pd.DataFrame, discretization_para
 
     bayesian_model = DiscreteBayesianNetwork()
     for _, row in project_df.iterrows():
-        activity_code = row['Código']
+        activity_code = row['Code']
         bayesian_model.add_edge(f"D_{activity_code}", f"T_{activity_code}")
-        if row['Predecessoras'] != '-':
-            for pred in row['Predecessoras'].split(','):
+        if row['Predecessors'] != '-':
+            for pred in row['Predecessors'].split(','):
                 bayesian_model.add_edge(f"T_{pred}", f"T_{activity_code}")
 
     # First, create and add all duration CPDs (prior probabilities)
     duration_cpds = []
     for _, row in project_df.iterrows():
-        activity_code = row['Código']
+        activity_code = row['Code']
         params = discretization_params[activity_code]
         d_node = f"D_{activity_code}"
         prior_probs_array = np.array(params['probs']).reshape(len(params['labels']), 1)
@@ -68,7 +68,7 @@ def build_generic_bayesian_network(project_df: pd.DataFrame, discretization_para
     # Then, create and add all completion time CPDs
     completion_cpds = []
     for _, row in project_df.iterrows():
-        activity_code = row['Código']
+        activity_code = row['Code']
         cpd_t = create_completion_cpt(bayesian_model, activity_code, num_completion_states, completion_labels, discretization_params)
         completion_cpds.append(cpd_t)
         

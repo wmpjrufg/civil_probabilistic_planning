@@ -36,27 +36,27 @@ G.graph['graph'] = {'rankdir': 'LR'}
 # Adicionar nós e arestas no grafo
 for _, row in df.iterrows():
     # Adiciona o nó (atividade)
-    G.add_node(row['Código'], label=row['Atividade'], duration=row['Durações'])
+    G.add_node(row['Code'], label=row['Task Name'], duration=row['Durações'])
     
     # Se houver predecessoras, adicionar aresta
-    if row['Predecessoras'] != '-':
-        predecessors = row['Predecessoras'].split(',')
+    if row['Predecessors'] != '-':
+        predecessors = row['Predecessors'].split(',')
         for pred in predecessors:
-            G.add_edge(pred, row['Código'])
+            G.add_edge(pred, row['Code'])
 
 
 
 #CALCULAR CAMINHO CRÍTICO
-atividades = df["Atividade"].tolist()
-atividade_para_codigo = {f"{row['Atividade']} ({row['Código']})": row['Código'] for _, row in df.iterrows()}
+atividades = df["Task Name"].tolist()
+atividade_para_codigo = {f"{row['Task Name']} ({row['Code']})": row['Code'] for _, row in df.iterrows()}
 start_node = st.selectbox("Nó inicial para calcular caminho crítico:",list(atividade_para_codigo.keys()))
 end_node = st.selectbox("Nó final para calcular caminha crítico:", list(atividade_para_codigo.keys()))
 caminho_critico = {}
 
 
 if st.button("Gerar Caminho Crítico"):
-    caminho_critico =  max_path_dag_node_weights(G, df.set_index('Código')['Durações'].to_dict(), atividade_para_codigo[start_node], atividade_para_codigo[end_node])
-    codigo_para_atividade = df.set_index('Código')['Atividade'].to_dict()
+    caminho_critico =  max_path_dag_node_weights(G, df.set_index('Code')['Durações'].to_dict(), atividade_para_codigo[start_node], atividade_para_codigo[end_node])
+    codigo_para_atividade = df.set_index('Code')['Task Name'].to_dict()
     atividades_caminho = [codigo_para_atividade[codigo] for codigo in caminho_critico['caminho']]
     caminho_str = " -> ".join(atividades_caminho)
    

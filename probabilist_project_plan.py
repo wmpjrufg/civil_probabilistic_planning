@@ -26,23 +26,21 @@ def generate_samples(df: pd.DataFrame, distribution: str, n_samples: int) -> pd.
     # Calculate for triangular distribution
     if distribution == "triangular":
         params = {
-            row["Código"]: {
-                "min": float(p[0]),
-                "mode": float(p[1]),
-                "max": float(p[2]),
+            row["Code"]: {
+                "min": float(row["Min."]),
+                "mode": float(row["Mode"]),
+                "max": float(row["Max."]),
             }
             for _, row in df.iterrows()
-            for p in [row["Parâmetros"].split(",")]
         }
     # Calculate for normal distribution
     elif distribution == "normal":
         params = {
-            row["Código"]: {
-                "mean": float(p[0]),
-                "std": float(p[1]),
+            row["Code"]: {
+                "mean": float(row["Mean"]),
+                "std": float(row["Std"]),
             }
             for _, row in df.iterrows()
-            for p in [row["Parâmetros"].split(",")]
         }
     else: 
         st.error("Unsupported distribution specified in the Excel file.")

@@ -44,11 +44,7 @@ else:
 # --------------------------------------------------------------------
 # Calculando distribuições
 
-if "Distribuição" not in df.columns or pd.isna(df.loc[0, "Distribuição"]):
-    st.warning("Please select a valid tab that contains the 'Distribution' column with value.")
-    st.stop()
-
-distribuicao = df.loc[0, "Distribuição"]
+distribuicao = "triangular"
 
 
 # Número de amostras
@@ -79,13 +75,13 @@ G.graph['graph'] = {'rankdir': 'LR'}
 # Adicionar nós e arestas no grafo
 for _, row in df.iterrows():
     # Adiciona o nó (atividade)
-    G.add_node(row['Código'], label=row['Atividade'])
+    G.add_node(row['Code'], label=row['Task Name'])
     
     # Se houver predecessoras, adicionar aresta
-    if row['Predecessoras'] != '-':
-        predecessors = row['Predecessoras'].split(',')
+    if row['Predecessors'] != '-':
+        predecessors = row['Predecessors'].split(',')
         for pred in predecessors:
-            G.add_edge(pred, row['Código'])
+            G.add_edge(pred, row['Code'])
 
 #Mostrar grafo
 tempos_caminho_critico = []
@@ -101,18 +97,18 @@ if not nos_finais_grafo:
 no_final_projeto = nos_finais_grafo[0]
 
 #Selecionar nós para calcular caminho crítico
-atividades = df["Atividade"].tolist()
+atividades = df["Task Name"].tolist()
 st.header("Graph analysis")
 st.write("Default pattern: Using first activity as start node and last activity as end node from Excel data.")
 
-atividade_para_codigo = {f"{row['Atividade']} ({row['Código']})": row['Código'] for _, row in df.iterrows()}
+atividade_para_codigo = {f"{row['Task Name']} ({row['Code']})": row['Code'] for _, row in df.iterrows()}
 opcoes = list(atividade_para_codigo.keys())
 valor_default = [k for k, v in atividade_para_codigo.items() if v == no_final_projeto][0]
 start_node = st.selectbox("Enter start node for critical path::",opcoes)
 end_node = st.selectbox("Enter end node for critical path:", list(atividade_para_codigo.keys()), index=opcoes.index(valor_default))
 if st.button("Generate Critical Path"):
     for i in range(n):
-        for codigo in df['Código']:
+        for codigo in df['Code']:
             G.nodes[codigo]['duration'] = df_amostras.at[i, codigo] #atribui o valor de cada atividade naquela amostra ao grafo
         
         try:
@@ -230,7 +226,7 @@ if "resultado_bayesiano" in st.session_state:
     
     with st.form(key='evidence_form'):
         for codigo, params in params_discretizacao.items():
-            label = f"Duration of '{df[df['Código'] == codigo]['Atividade'].values[0]}'"
+            label = f"Duration of '{df[df['Code'] == codigo]['Task Name'].values[0]}'"
             # Adiciona uma opção para não especificar a evidência
             options = ["Not specified"] + params['labels']
             selected_value = cols[col_idx].selectbox(label, options=options, key=f"evidence_{codigo}")
