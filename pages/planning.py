@@ -14,7 +14,7 @@ from complex_network.discretize_samples import discretize_by_whole_days
 from complex_network.create_bayesian_network import build_generic_bayesian_network
 from pgmpy.inference import VariableElimination
 
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(initial_sidebar_state="collapsed")
 
 st.markdown(
     """
