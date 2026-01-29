@@ -14,29 +14,6 @@ from complex_network.discretize_samples import discretize_by_whole_days
 from complex_network.create_bayesian_network import build_generic_bayesian_network
 from pgmpy.inference import VariableElimination
 
-st.set_page_config(initial_sidebar_state="collapsed")
-
-st.markdown(
-    """
-    <style>
-        /* Sidebar inteira */
-        section[data-testid="stSidebar"] {
-            display: none !important;
-        }
-
-        /* Botão de abrir sidebar (hamburger) */
-        button[kind="header"] {
-            display: none !important;
-        }
-
-        /* Margem que sobra quando sidebar existe */
-        .block-container {
-            padding-left: 2rem !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 st.title("Probabilistic Project Planning")
 
