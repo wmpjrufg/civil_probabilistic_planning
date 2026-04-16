@@ -1,0 +1,31 @@
+name: Wake up Streamlit
+
+on:
+  schedule:
+    # Executa a cada 4 horas
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+env:
+  # Isso remove o aviso de depreciação do Node.js 20
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  wake_up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # Versão mais estável atual
+
+      - name: Instalar dependências
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Executar script de despertar
+        run: python wake_up.py
