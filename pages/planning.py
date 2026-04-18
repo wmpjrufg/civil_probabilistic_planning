@@ -26,7 +26,8 @@ if uploaded_file is not None:
     sheet_names = xls.sheet_names
 
     # Permite o usuário selecionar a planilha
-    selected_sheet = st.selectbox("Select the sheet:", sheet_names)
+    default_index = sheet_names.index("Plan") if "Plan" in sheet_names else 0
+    selected_sheet = st.selectbox("Select the sheet:", sheet_names, index=default_index)
 
     # Lê a planilha selecionada
     df = pd.read_excel(xls, sheet_name=selected_sheet)
