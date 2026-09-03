@@ -1,0 +1,19 @@
+This paper presented a Digital Twin framework for risk assessment in construction scheduling, integrating traditional PERT/CPM methods with probabilistic approaches like Monte Carlo simulation and Bayesian Networks. By adapting financial risk metrics—Value-at-Risk (VaR) and Conditional Value-at-Risk ($CVaR$)—the proposed model offers a more granular and realistic perspective on project delays than traditional deterministic approaches.
+
+\subsection{Key Contributions}
+\begin{itemize}
+    \item \textbf{Adoption of the Digital Shadow Paradigm:} The bibliographic review and field investigation revealed that the deployment of large-scale sensing infrastructure is rarely feasible in civil engineering projects, particularly during early planning stages. The adoption of a digital shadow approach, supported by standardized spreadsheet-based data ingestion, proved to be a fast and effective alternative for incorporating project data of varied nature into a unified probabilistic framework. This positioning makes the tool especially valuable for scenario analysis in the early phases of a project, when sensor-based monitoring is not yet justified or available.
+    \item \textbf{Dynamic Decision-Making:} Unlike static deterministic plans, the framework enables project managers to update completion forecasts as activities are concluded. By propagating observed evidence through the Bayesian network, the model automatically recalculates the probability distributions of all dependent activities, supporting evidence-based replanning throughout the project lifecycle.
+    \item \textbf{Risk Quantification:} The integration of Value-at-Risk (VaR) and Conditional Value-at-Risk (CVaR) provides quantile-based risk metrics that translate probabilistic schedule outputs into actionable thresholds (e.g., a 95\% probability that project duration will not exceed a given value, and the expected duration in the worst 5\% of scenarios). These metrics are essential for managing stakeholder expectations, contractual deadlines, and financial penalties.
+    \item \textbf{Practical Implementation:} Developed in Python with a Streamlit-based web interface, the tool demonstrates how complex probabilistic methods, often confined to academic environments, can be translated into an intuitive experience accessible to engineering practitioners. The standardized data ingestion pipeline also favors reproducibility and facilitates the application of the framework to projects of different scales and natures.
+\end{itemize}
+
+\subsection{Limitations and Future Work}
+While the framework successfully demonstrated its utility through a toy problem, some limitations remain to be addressed in future research:
+\begin{itemize}
+    \item \textbf{Activity Interdependence:} The current model assumes relative independence between activity durations. In real-world scenarios, external factors such as adverse weather conditions can cause correlated delays across multiple tasks. Future studies should explore modeling these common-cause failures within the Bayesian Network structure.
+    \item \textbf{Data Range Constraints:} Inferences are currently restricted to the duration ranges (minimum and maximum) defined in the original dataset. Expanding the model to handle "out-of-bounds" observations would increase its resilience to extreme, unforeseen events.
+    \item \textbf{Automation Maturity:} Moving from a Digital Shadow (unidirectional data flow) toward a fully integrated Digital Twin—where real-time sensor data updates the schedule automatically in both directions—remains a promising frontier for this research.
+\end{itemize}
+
+In conclusion, this framework provides construction managers with a robust, data-driven tool to navigate the inherent uncertainties of complex projects, shifting the paradigm from reactive scheduling to proactive, probabilistic risk management.

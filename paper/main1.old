@@ -1,0 +1,131 @@
+\documentclass[preprint,11pt]{elsarticle}
+
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{verbatim}
+\usepackage{amssymb}
+\usepackage{lineno}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\usepackage[multiple]{footmisc}
+\usepackage{mathtools}
+\usepackage{url}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{natbib}
+\usepackage{color}
+\biboptions{sort&compress}
+\restylefloat{table}
+\usepackage{upgreek}
+\usepackage{nicefrac}
+\usepackage{xargs}                      
+\usepackage[pdftex,dvipsnames]{xcolor} 
+\usepackage[colorinlistoftodos,prependcaption,textsize=tiny]{todonotes}
+%\usepackage{algorithmic}
+\usepackage{xcolor}
+\usepackage{multicol}
+% \usepackage{algorithm}
+%\usepackage[noend]{algpseudocode}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\makeatletter
+%\def\BState{\State\hskip-\ALG@thistlm}
+\usepackage{lipsum}
+\makeatother
+\usepackage{nomencl}
+\makenomenclature
+\renewcommand{\vec}[1]{\mathbf{#1}}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argminB}{arg\,min}
+\usepackage{xcolor}
+\usepackage{pifont}
+\newcommand{\cmark}{\textcolor{green}{\ding{51}}} % check mark (verde)
+\newcommand{\xmark}{\textcolor{red}{\ding{55}}}   % x mark (vermelho)
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{prop}[thm]{Proposition}
+\newtheorem*{cor}{Corollary}
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{conj}{Conjecture}[section]
+\newtheorem{exmp}{Example}[section]
+
+\theoremstyle{remark}
+\newtheorem*{rem}{Remark}
+\newtheorem*{note}{Note}
+
+
+\newcommandx{\unsure}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\change}[2][1=]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red,#1]{#2}}
+\newcommandx{\info}[2][1=]{\todo[linecolor=OliveGreen,backgroundcolor=OliveGreen!25,bordercolor=OliveGreen,#1]{#2}}
+\newcommandx{\improvement}[2][1=]{\todo[linecolor=Plum,backgroundcolor=Plum!25,bordercolor=Plum,#1]{#2}}
+\newcommandx{\thiswillnotshow}[2][1=]{\todo[disable,#1]{#2}}
+
+\usepackage{lineno}
+
+\journal{XXXXXX}
+
+\begin{document}
+
+\begin{frontmatter}
+
+% Risk-based cost-benefit analysis of masonry structures considering progressive collapse under wall loss scenarios
+\title{A Digital Twin Framework for Risk Assessment in Construction Scheduling: Integrating Monte Carlo and Bayesian Network Approaches}
+
+\author[label1]{Nilson Jorge Leão Junior}
+\author[label1]{Wanderlei Malaquias Pereira Junior}
+\author[label3]{Henrique Caetano}
+\author[label1]{Marcos Napoleão Rabelo}
+\author[label2]{Toni Esteves}
+\author[label4]{Marcos Luiz Henrique}
+\author[label5]{Hebert Kimura}
+\author[label3]{Carlos Maciel}
+
+\address[label1]{Federal University of Catalão – UFCAT, Catalão, 75701-180, Goiás, Brazil}
+\address[label2]{Faculdade de Engenharia, Universidade Federal de Catalão, Catalão 75705-220, Goiás, Brasil}
+\address[label3]{Faculdade de Engenharia, Universidade Federal de Catalão, Catalão 75705-220, Goiás, Brasil}
+\address[label4]{NICEN - Interdisciplinary Center for Exact and Natural Sciences - CA, Caruaru, 55014-900, Pernambuco, Brazil}
+\address[label5]{Department of Civil Engineering and Georesources, Porto, 4200-465, Portugal}
+
+\begin{abstract}
+The construction sector remains one of the world's largest industries, yet it faces persistent challenges related to schedule delays and cost overruns due to its dynamic and uncertain nature. This paper proposes a Digital Twin framework for risk assessment in construction scheduling by integrating traditional PERT/CPM methods with probabilistic approaches, specifically Monte Carlo simulation and Bayesian Networks. Unlike traditional deterministic models, the proposed methodology incorporates financial risk management metrics—Value-at-Risk (VaR) and Conditional Value-at-Risk ($CVaR$)—to provide a realistic analysis of the project makespan variability. The system was implemented using a Python-based client-server architecture with a Streamlit web interface, enabling dynamic updates through real-time evidence propagation.  The study concludes that the Digital Twin approach provides robust decision support, allowing managers to quantify risks and anticipate the impact of early task variations on final deadlines.
+\end{abstract}
+
+\begin{keyword}
+Digital Twin \sep Bayesian Networks \sep Risk Management \sep Construction Scheduling \sep PERT/CPM \sep Monte Carlo Simulation
+
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+\section{Introduction}\label{sec:intro}
+\input{Section_1}
+\section{Theoretical Background}\label{sec:theory}
+\input{Section_2}
+\section{Digital Twin Framework}\label{sec:dtwin}
+\input{Section_3}
+\section{Results and Discussion}\label{sec:res}
+\input{Section_4}
+\section{Concluding remarks}
+\label{sec:conc}
+\input{Section_5}
+
+
+\bibliographystyle{model1-num-names}
+\bibliography{mybibfile.bib}
+
+\end{document}
